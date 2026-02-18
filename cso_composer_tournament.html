@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSO Composer Tournament</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #8B1A1A 0%, #2C1810 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .cso-logos {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            justify-content: center;
+        }
+        
+        .cso-logo {
+            height: 70px;
+            width: auto;
+            filter: brightness(0) saturate(100%) invert(68%) sepia(66%) saturate(466%) hue-rotate(6deg) brightness(96%) contrast(87%);
+            opacity: 0.95;
+        }
+        
+        h1 {
+            font-family: 'Playfair Display', 'Georgia', serif;
+            font-size: 3em;
+            font-weight: 900;
+            color: #D4AF37;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin: 0;
+            animation: fadeInDown 1s ease;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            font-family: 'Playfair Display', 'Georgia', serif;
+            font-size: 1.2em;
+            color: #E8D4A0;
+            font-style: italic;
+            font-weight: 400;
+        }
+        
+        /* Full-Screen Overlays */
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #8B1A1A 0%, #2C1810 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease;
+        }
+        
+        .fullscreen-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .overlay-text {
+            font-size: 5em;
+            color: #D4AF37;
+            text-align: center;
+            animation: scaleInBounce 0.8s ease;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
+        }
+        
+        .overlay-subtext {
+            font-size: 2em;
+            color: #E8D4A0;
+            margin-top: 20px;
+            font-style: italic;
+            animation: fadeInUp 1s ease 0.3s both;
+        }
+        
+        /* Main Game Area */
+        .game-area {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            min-height: 400px;
+        }
+        
+        /* Matchup Display */
+        .matchup-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            margin: 40px 0;
+        }
+        
+        .composer-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 3px solid #D4AF37;
+            border-radius: 20px;
+            padding: 30px;
+            width: 300px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        
+        .composer-card.entering-left {
+            animation: enterFromLeft 0.8s ease forwards;
+        }
+        
+        .composer-card.entering-left.wildcard-delay {
+            animation: enterFromLeft 0.8s ease 0.8s forwards;
+        }
+        
+        .composer-card.entering-right {
+            animation: enterFromRight 0.8s ease 0.9s forwards;
+        }
+        
+        .composer-card.entering-right.wildcard-delay {
+            animation: enterFromRight 0.8s ease 1.7s forwards;
+        }
+        
+        .composer-card.selectable:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.5);
+            border-color: #FFD700;
+        }
+        
+        .composer-card.winner {
+            animation: winnerGrow 1.5s ease forwards;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        .composer-card.loser {
+            animation: loserFade 1s ease forwards;
+        }
+        
+        .wild-card-badge {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background: #FF6B6B;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.8);
+        }
+        
+        .portrait-frame {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #D4AF37;
+            background: #2C1810;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .portrait-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .placeholder-portrait {
+            font-size: 4em;
+            color: #D4AF37;
+        }
+        
+        .composer-name {
+            font-size: 1.5em;
+            color: #D4AF37;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-family: 'Playfair Display', 'Georgia', serif;
+        }
+        
+        .composer-years {
+            font-size: 0.9em;
+            color: #E8D4A0;
+            font-style: italic;
+        }
+        
+        .vs-text {
+            font-size: 3em;
+            color: #D4AF37;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: fadeIn 0.5s ease 0.9s both;
+        }
+        
+        /* Bracket Sidebar */
+        .bracket-sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 40px;
+        }
+        
+        .bracket-title {
+            text-align: center;
+            font-size: 1.5em;
+            color: #D4AF37;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+        }
+        
+        .division-section {
+            margin-bottom: 40px;
+        }
+        
+        .division-header {
+            background: rgba(212, 175, 55, 0.2);
+            color: #D4AF37;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .tournament-tree {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            min-height: 400px;
+        }
+        
+        .bracket-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            flex: 1;
+        }
+        
+        .bracket-column.round-1 .bracket-slot {
+            margin: 4px 0;
+        }
+        
+        .bracket-column.round-2 .bracket-slot {
+            margin: 20px 0;
+        }
+        
+        .bracket-column.round-3 .bracket-slot {
+            margin: 80px 0;
+        }
+        
+        .round-label {
+            font-size: 0.7em;
+            color: #E8D4A0;
+            text-align: center;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        
+        .bracket-slot {
+            position: relative;
+        }
+        
+        .bracket-match {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 0.85em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0.3;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            position: relative;
+        }
+        
+        .bracket-match.populated {
+            opacity: 1;
+            background: rgba(212, 175, 55, 0.1);
+            border-color: #D4AF37;
+        }
+        
+        .bracket-match.winner {
+            background: rgba(212, 175, 55, 0.25);
+            border-color: #FFD700;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+        
+        .bracket-match .seed {
+            color: #D4AF37;
+            font-weight: bold;
+            margin-right: 5px;
+            font-size: 0.9em;
+        }
+        
+        .bracket-match .name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Connector Lines */
+        .bracket-slot::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            width: 20px;
+            height: 2px;
+            background: rgba(212, 175, 55, 0.3);
+        }
+        
+        .bracket-column.round-3 .bracket-slot::after {
+            display: none;
+        }
+        
+        /* Final Four & Championship special styling */
+        .final-four-bracket, .championship-bracket {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .final-four-bracket .bracket-match,
+        .championship-bracket .bracket-match {
+            font-size: 0.95em;
+            padding: 10px 12px;
+        }
+        
+        /* Winner Celebration Effects */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #D4AF37;
+            position: absolute;
+            animation: confettiFall 3s linear;
+            pointer-events: none;
+        }
+        
+        @keyframes confettiFall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Instructions */
+        .instructions {
+            background: rgba(212, 175, 55, 0.1);
+            border: 2px solid #D4AF37;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions h3 {
+            color: #D4AF37;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 10px 0;
+            color: #E8D4A0;
+        }
+        
+        .instructions li:before {
+            content: "♪ ";
+            color: #D4AF37;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        /* Controls */
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            background: #D4AF37;
+            color: #2C1810;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+            font-family: 'Playfair Display', 'Georgia', serif;
+            letter-spacing: 1px;
+        }
+        
+        .btn:hover {
+            background: #FFD700;
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(212, 175, 55, 0.5);
+        }
+        
+        /* Champion Display */
+        .champion-container {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .champion-portrait {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 30px;
+            border-radius: 50%;
+            border: 6px solid #FFD700;
+            overflow: hidden;
+            background: #2C1810;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: championReveal 1.5s ease;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
+        }
+        
+        .champion-portrait img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .share-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid #D4AF37;
+            padding: 12px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        
+        .share-btn:hover {
+            background: #D4AF37;
+            color: #2C1810;
+        }
+        
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes enterFromLeft {
+            0% {
+                opacity: 0;
+                transform: translateX(-200px) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+        
+        @keyframes enterFromRight {
+            0% {
+                opacity: 0;
+                transform: translateX(200px) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+        
+        @keyframes scaleInBounce {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes winnerFlourish {
+            0% {
+                transform: scale(1);
+            }
+            25% {
+                transform: scale(1.1) rotate(5deg);
+            }
+            50% {
+                transform: scale(1.15) rotate(-5deg);
+            }
+            75% {
+                transform: scale(1.1) rotate(3deg);
+            }
+            100% {
+                transform: scale(1.2) rotate(0deg);
+                box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+                border-color: #FFD700;
+                background: rgba(212, 175, 55, 0.3);
+            }
+        }
+        
+        @keyframes winnerGrow {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.15);
+            }
+            100% {
+                transform: scale(1.12);
+                opacity: 1;
+                box-shadow: 0 0 50px rgba(255, 215, 0, 0.9);
+                border-color: #FFD700;
+                border-width: 5px;
+                background: rgba(212, 175, 55, 0.5);
+                filter: brightness(1.3);
+            }
+        }
+        
+        @keyframes loserFade {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0.3;
+                transform: scale(0.85);
+                filter: grayscale(0.7);
+            }
+        }
+        
+        @keyframes bracketNameSlide {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes bracketPopIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+        
+        @keyframes championReveal {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes wildCardReveal {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes wildCardFadeOut {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+        
+        .wild-card-reveal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            color: #FFD700;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: wildCardReveal 0.5s ease forwards;
+            z-index: 10;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+        
+        .wild-card-reveal.fade-out {
+            animation: wildCardFadeOut 0.3s ease forwards;
+        }
+    </style>
+</head>
+<body>
+    <!-- Full-Screen Overlays -->
+    <div class="fullscreen-overlay" id="overlay">
+        <div class="overlay-text" id="overlayText"></div>
+        <div class="overlay-subtext" id="overlaySubtext"></div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <div class="cso-logos">
+                <img src="cso-logo.svg" alt="Chicago Symphony Orchestra" class="cso-logo" id="cso-logo-left">
+                <div>
+                    <h1>Composer Tournament</h1>
+                    <p class="subtitle">Choose Your Champion</p>
+                </div>
+                <img src="cso-logo.svg" alt="Chicago Symphony Orchestra" class="cso-logo" id="cso-logo-right">
+            </div>
+        </header>
+        
+        <div class="instructions">
+            <h3>📝 Setup Instructions for CSO Staff</h3>
+            <ul>
+                <li><strong>CSO Logo:</strong> The logo file "cso-logo.svg" is already included. Keep it in the same folder as the HTML file.</li>
+                <li><strong>Add Audio Clips:</strong> In the <code>composerData</code> object (line ~850), add TWO audio files for each composer:
+                    <ul style="margin-left: 30px; margin-top: 5px;">
+                        <li><code>audioIntro</code>: 1-2 second clip that plays when the composer first appears</li>
+                        <li><code>audioWinner</code>: 1-2 second clip that plays when they win a match</li>
+                    </ul>
+                </li>
+                <li><strong>Add Portraits:</strong> Add image URLs/paths to the <code>image</code> property in the same object.</li>
+                <li><strong>Example:</strong> <code>{ name: "Bach", image: "images/bach.jpg", audioIntro: "audio/bach_intro.mp3", audioWinner: "audio/bach_wins.mp3" }</code></li>
+                <li><strong>Social Sharing:</strong> Update URLs in <code>shareToTwitter()</code> and <code>shareToFacebook()</code> functions.</li>
+            </ul>
+        </div>
+        
+        <!-- Main Game Area -->
+        <div class="game-area" id="gameArea">
+            <div style="text-align: center; padding: 40px; color: #E8D4A0;">
+                <p style="font-size: 1.3em;">Click "Begin Tournament" to start choosing your champion composer!</p>
+            </div>
+        </div>
+        
+        <!-- Bracket Sidebar -->
+        <div class="bracket-sidebar">
+            <div class="bracket-title" id="bracketTitle">
+                <button class="btn" onclick="startTournament()" style="margin: 0;">Begin Tournament</button>
+            </div>
+            
+            <!-- Baroque Division -->
+            <div class="division-section">
+                <div class="division-header">Baroque Era</div>
+                <div class="tournament-tree">
+                    <div class="bracket-column round-1">
+                        <div class="round-label">Round 1</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="baroque-r1-m1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="baroque-r1-m2"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="baroque-r1-m3"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="baroque-r1-m4"></div></div>
+                    </div>
+                    <div class="bracket-column round-2">
+                        <div class="round-label">Semis</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="baroque-r2-m1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="baroque-r2-m2"></div></div>
+                    </div>
+                    <div class="bracket-column round-3">
+                        <div class="round-label">Final</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="baroque-r3-m1"></div></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Classical Division -->
+            <div class="division-section">
+                <div class="division-header">Classical Era</div>
+                <div class="tournament-tree">
+                    <div class="bracket-column round-1">
+                        <div class="round-label">Round 1</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="classical-r1-m1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="classical-r1-m2"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="classical-r1-m3"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="classical-r1-m4"></div></div>
+                    </div>
+                    <div class="bracket-column round-2">
+                        <div class="round-label">Semis</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="classical-r2-m1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="classical-r2-m2"></div></div>
+                    </div>
+                    <div class="bracket-column round-3">
+                        <div class="round-label">Final</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="classical-r3-m1"></div></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Romantic Division -->
+            <div class="division-section">
+                <div class="division-header">Romantic Era</div>
+                <div class="tournament-tree">
+                    <div class="bracket-column round-1">
+                        <div class="round-label">Round 1</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="romantic-r1-m1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="romantic-r1-m2"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="romantic-r1-m3"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="romantic-r1-m4"></div></div>
+                    </div>
+                    <div class="bracket-column round-2">
+                        <div class="round-label">Semis</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="romantic-r2-m1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="romantic-r2-m2"></div></div>
+                    </div>
+                    <div class="bracket-column round-3">
+                        <div class="round-label">Final</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="romantic-r3-m1"></div></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modernists Division -->
+            <div class="division-section">
+                <div class="division-header">Modernist Era</div>
+                <div class="tournament-tree">
+                    <div class="bracket-column round-1">
+                        <div class="round-label">Round 1</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="modernists-r1-m1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="modernists-r1-m2"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="modernists-r1-m3"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="modernists-r1-m4"></div></div>
+                    </div>
+                    <div class="bracket-column round-2">
+                        <div class="round-label">Semis</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="modernists-r2-m1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="modernists-r2-m2"></div></div>
+                    </div>
+                    <div class="bracket-column round-3">
+                        <div class="round-label">Final</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="modernists-r3-m1"></div></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Final Four -->
+            <div class="division-section">
+                <div class="division-header">Final Four</div>
+                <div class="tournament-tree">
+                    <div class="bracket-column round-1">
+                        <div class="round-label">Semi-Finals</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="ff-sf1-c1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="ff-sf1-c2"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="ff-sf2-c1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="ff-sf2-c2"></div></div>
+                    </div>
+                    <div class="bracket-column round-2">
+                        <div class="round-label">Winners</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="ff-m1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="ff-m2"></div></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Championship -->
+            <div class="division-section">
+                <div class="division-header">Championship</div>
+                <div class="tournament-tree">
+                    <div class="bracket-column round-1">
+                        <div class="round-label">Finalists</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="championship-c1"></div></div>
+                        <div class="bracket-slot"><div class="bracket-match" id="championship-c2"></div></div>
+                    </div>
+                    <div class="bracket-column round-2">
+                        <div class="round-label">Champion</div>
+                        <div class="bracket-slot"><div class="bracket-match" id="championship"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tournament Data
+        const composerData = {
+            baroque: [
+                { seed: 1, name: "J.S. Bach", wildcard: false, image: "images/bach.jpg", audioIntro: "audio/bach_intro.wav", audioWinner: "audio/bach_winner.wav" },
+                { seed: 8, name: "Georg Philipp Telemann", wildcard: false, image: "images/telemann.jpg", audioIntro: "audio/telemann_intro.wav", audioWinner: "audio/telemann_winner.wav" },
+                { seed: 2, name: "Antonio Vivaldi", wildcard: false, image: "images/vivaldi.jpg", audioIntro: "audio/vivaldi_intro.wav", audioWinner: "audio/vivaldi_winner.wav" },
+                { seed: 7, name: "Domenico Scarlatti", wildcard: false, image: "images/scarlatti.jpg", audioIntro: "audio/scarlatti_intro.wav", audioWinner: "audio/scarlatti_winner.wav" },
+                { seed: 3, name: "George Frideric Handel", wildcard: false, image: "images/handel.jpg", audioIntro: "audio/handel_intro.wav", audioWinner: "audio/handel_winner.wav" },
+                { seed: 6, name: "Élisabeth Jacquet de la Guerre", wildcard: true, image: "images/jacquet.jpg", audioIntro: "audio/jacquet_intro.wav", audioWinner: "audio/jacquet_winner.wav" },
+                { seed: 4, name: "Claudio Monteverdi", wildcard: false, image: "images/monteverdi.jpg", audioIntro: "audio/monteverdi_intro.wav", audioWinner: "audio/monteverdi_winner.wav" },
+                { seed: 5, name: "Arcangelo Corelli", wildcard: false, image: "images/corelli.jpg", audioIntro: "audio/corelli_intro.wav", audioWinner: "audio/corelli_winner.wav" }
+            ],
+            classical: [
+                { seed: 1, name: "Wolfgang Amadeus Mozart", wildcard: false, image: "images/mozart.jpg", audioIntro: "audio/mozart_intro.wav", audioWinner: "audio/mozart_winner.wav" },
+                { seed: 8, name: "Antonio Salieri", wildcard: true, image: "images/salieri.jpg", audioIntro: "audio/salieri_intro.wav", audioWinner: "audio/salieri_winner.wav" },
+                { seed: 2, name: "Joseph Haydn", wildcard: false, image: "images/haydn.jpg", audioIntro: "audio/haydn_intro.wav", audioWinner: "audio/haydn_winner.wav" },
+                { seed: 7, name: "Christoph Willibald Gluck", wildcard: false, image: "images/gluck.jpg", audioIntro: "audio/gluck_intro.wav", audioWinner: "audio/gluck_winner.wav" },
+                { seed: 3, name: "Carl Maria von Weber", wildcard: false, image: "images/weber.jpg", audioIntro: "audio/weber_intro.wav", audioWinner: "audio/weber_winner.wav" },
+                { seed: 6, name: "Gioachino Rossini", wildcard: false, image: "images/rossini.jpg", audioIntro: "audio/rossini_intro.wav", audioWinner: "audio/rossini_winner.wav" },
+                { seed: 4, name: "C.P.E. Bach", wildcard: false, image: "images/cpe_bach.jpg", audioIntro: "audio/cpe_bach_intro.wav", audioWinner: "audio/cpe_bach_winner.wav" },
+                { seed: 5, name: "Joseph Boulogne", wildcard: false, image: "images/boulogne.jpg", audioIntro: "audio/boulogne_intro.wav", audioWinner: "audio/boulogne_winner.wav" }
+            ],
+            romantic: [
+                { seed: 1, name: "Ludwig van Beethoven", wildcard: false, image: "images/beethoven.jpg", audioIntro: "audio/beethoven_intro.wav", audioWinner: "audio/beethoven_winner.wav" },
+                { seed: 8, name: "Hector Berlioz", wildcard: false, image: "images/berlioz.jpg", audioIntro: "audio/berlioz_intro.wav", audioWinner: "audio/berlioz_winner.wav" },
+                { seed: 2, name: "Johannes Brahms", wildcard: false, image: "images/brahms.jpg", audioIntro: "audio/brahms_intro.wav", audioWinner: "audio/brahms_winner.wav" },
+                { seed: 7, name: "Pyotr Tchaikovsky", wildcard: false, image: "images/tchaikovsky.jpg", audioIntro: "audio/tchaikovsky_intro.wav", audioWinner: "audio/tchaikovsky_winner.wav" },
+                { seed: 3, name: "Richard Wagner", wildcard: false, image: "images/wagner.jpg", audioIntro: "audio/wagner_intro.wav", audioWinner: "audio/wagner_winner.wav" },
+                { seed: 6, name: "Emilie Mayer", wildcard: true, image: "images/mayer.jpg", audioIntro: "audio/mayer_intro.wav", audioWinner: "audio/mayer_winner.wav" },
+                { seed: 4, name: "Franz Schubert", wildcard: false, image: "images/schubert.jpg", audioIntro: "audio/schubert_intro.wav", audioWinner: "audio/schubert_winner.wav" },
+                { seed: 5, name: "Felix Mendelssohn", wildcard: false, image: "images/mendelssohn.jpg", audioIntro: "audio/mendelssohn_intro.wav", audioWinner: "audio/mendelssohn_winner.wav" }
+            ],
+            modernists: [
+                { seed: 1, name: "Igor Stravinsky", wildcard: false, image: "images/stravinsky.jpg", audioIntro: "audio/stravinsky_intro.wav", audioWinner: "audio/stravinsky_winner.wav" },
+                { seed: 8, name: "Pierre Boulez", wildcard: false, image: "images/boulez.jpg", audioIntro: "audio/boulez_intro.wav", audioWinner: "audio/boulez_winner.wav" },
+                { seed: 2, name: "Richard Strauss", wildcard: false, image: "images/strauss.jpg", audioIntro: "audio/strauss_intro.wav", audioWinner: "audio/strauss_winner.wav" },
+                { seed: 7, name: "Ferruccio Busoni", wildcard: true, image: "images/busoni.jpg", audioIntro: "audio/busoni_intro.wav", audioWinner: "audio/busoni_winner.wav" },
+                { seed: 3, name: "Dmitri Shostakovich", wildcard: false, image: "images/shostakovich.jpg", audioIntro: "audio/shostakovich_intro.wav", audioWinner: "audio/shostakovich_winner.wav" },
+                { seed: 6, name: "Sergei Prokofiev", wildcard: false, image: "images/prokofiev.jpg", audioIntro: "audio/prokofiev_intro.wav", audioWinner: "audio/prokofiev_winner.wav" },
+                { seed: 4, name: "Maurice Ravel", wildcard: false, image: "images/ravel.jpg", audioIntro: "audio/ravel_intro.wav", audioWinner: "audio/ravel_winner.wav" },
+                { seed: 5, name: "Claude Debussy", wildcard: false, image: "images/debussy.jpg", audioIntro: "audio/debussy_intro.wav", audioWinner: "audio/debussy_winner.wav" }
+            ]
+        };
+        
+        // Game State
+        let currentDivision = 'baroque';
+        let currentRound = 1;
+        let currentMatchIndex = 0;
+        let tournamentStarted = false;
+        
+        // Results tracking
+        let results = {
+            baroque: { r1: [], r2: [], r3: [] },
+            classical: { r1: [], r2: [], r3: [] },
+            romantic: { r1: [], r2: [], r3: [] },
+            modernists: { r1: [], r2: [], r3: [] },
+            finalFour: [],
+            champion: null
+        };
+        
+        // Audio player
+        function playAudio(audioPath) {
+            if (audioPath) {
+                const audio = new Audio(audioPath);
+                audio.volume = 0.6;
+                audio.play().catch(e => console.log('Audio playback failed:', e));
+            }
+        }
+        
+        // Show overlay animation
+        function showOverlay(mainText, subText = '', duration = 2500) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('overlay');
+                const overlayText = document.getElementById('overlayText');
+                const overlaySubtext = document.getElementById('overlaySubtext');
+                
+                overlayText.textContent = mainText;
+                overlaySubtext.textContent = subText;
+                overlay.classList.add('active');
+                
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    setTimeout(resolve, 500);
+                }, duration);
+            });
+        }
+        
+        // Start tournament
+        async function startTournament() {
+            tournamentStarted = true;
+            
+            // Change button to bracket title
+            document.getElementById('bracketTitle').innerHTML = '🏆 Tournament Bracket';
+            
+            // Clear the game area welcome message
+            document.getElementById('gameArea').innerHTML = '';
+            
+            await showOverlay('The Baroque Era', '');
+            startNextMatch();
+        }
+        
+        // Get matchup for current state
+        function getCurrentMatchup() {
+            if (currentDivision === 'finalFour') {
+                const baroque = results.baroque.r3[0];
+                const classical = results.classical.r3[0];
+                const romantic = results.romantic.r3[0];
+                const modernists = results.modernists.r3[0];
+                
+                if (currentMatchIndex === 0) {
+                    return [baroque, classical];
+                } else if (currentMatchIndex === 1) {
+                    return [romantic, modernists];
+                } else {
+                    return null;
+                }
+            } else if (currentDivision === 'championship') {
+                if (currentMatchIndex === 0 && results.finalFour.length >= 2) {
+                    return [results.finalFour[0], results.finalFour[1]];
+                } else {
+                    return null;
+                }
+            }
+            
+            const division = composerData[currentDivision];
+            
+            if (currentRound === 1) {
+                const matchups = [
+                    [division[0], division[1]], // 1v8
+                    [division[2], division[3]], // 2v7
+                    [division[4], division[5]], // 3v6
+                    [division[6], division[7]]  // 4v5
+                ];
+                return matchups[currentMatchIndex];
+            } else if (currentRound === 2) {
+                const winners = results[currentDivision].r1;
+                if (winners.length < 4) return null;
+                const matchups = [
+                    [winners[0], winners[1]],
+                    [winners[2], winners[3]]
+                ];
+                return matchups[currentMatchIndex];
+            } else if (currentRound === 3) {
+                const winners = results[currentDivision].r2;
+                if (winners.length < 2) return null;
+                if (currentMatchIndex === 0) {
+                    return [winners[0], winners[1]];
+                } else {
+                    return null; // Only one match in division finals
+                }
+            }
+        }
+        
+        // Start next match
+        async function startNextMatch() {
+            const matchup = getCurrentMatchup();
+            
+            if (!matchup) {
+                advancePhase();
+                return;
+            }
+            
+            // Show round announcement
+            const roundNames = {
+                1: 'Round 1',
+                2: 'Semi-Finals',
+                3: 'Division Finals'
+            };
+            
+            if (currentMatchIndex === 0) {
+                // Clear game area before showing round announcement
+                document.getElementById('gameArea').innerHTML = '';
+                await showOverlay(roundNames[currentRound], '', 1500);
+            }
+            
+            displayMatchup(matchup[0], matchup[1]);
+        }
+        
+        // Display matchup with entrance animations
+        async function displayMatchup(composer1, composer2) {
+            const gameArea = document.getElementById('gameArea');
+            
+            const hasWildcard1 = composer1.wildcard;
+            const hasWildcard2 = composer2.wildcard;
+            
+            // Initial display - show Wild Card text for wildcards, regular cards for non-wildcards
+            gameArea.innerHTML = `
+                <div class="matchup-container">
+                    ${hasWildcard1 ? `
+                    <div class="composer-card entering-left" id="composer1">
+                        <div class="wild-card-reveal">Wild Card Pick</div>
+                    </div>
+                    ` : `
+                    <div class="composer-card entering-left" id="composer1">
+                        <div class="portrait-frame">
+                            ${composer1.image ? `<img src="${composer1.image}" alt="${composer1.name}">` : '<div class="placeholder-portrait">🎼</div>'}
+                        </div>
+                        <div class="composer-name">${composer1.name}</div>
+                    </div>
+                    `}
+                    
+                    <div class="vs-text">VS</div>
+                    
+                    ${hasWildcard2 ? `
+                    <div class="composer-card entering-right" id="composer2">
+                        <div class="wild-card-reveal">Wild Card Pick</div>
+                    </div>
+                    ` : `
+                    <div class="composer-card entering-right" id="composer2">
+                        <div class="portrait-frame">
+                            ${composer2.image ? `<img src="${composer2.image}" alt="${composer2.name}">` : '<div class="placeholder-portrait">🎼</div>'}
+                        </div>
+                        <div class="composer-name">${composer2.name}</div>
+                    </div>
+                    `}
+                </div>
+            `;
+            
+            // Handle wildcard 1 replacement after drumroll
+            if (hasWildcard1) {
+                setTimeout(() => {
+                    const card1 = document.getElementById('composer1');
+                    card1.innerHTML = `
+                        <div class="portrait-frame">
+                            ${composer1.image ? `<img src="${composer1.image}" alt="${composer1.name}">` : '<div class="placeholder-portrait">🎼</div>'}
+                        </div>
+                        <div class="composer-name">${composer1.name}</div>
+                    `;
+                    playAudio(composer1.audioIntro);
+                }, 800);
+            } else {
+                playAudio(composer1.audioIntro);
+            }
+            
+            // Handle wildcard 2 replacement after drumroll
+            if (hasWildcard2) {
+                setTimeout(() => {
+                    const card2 = document.getElementById('composer2');
+                    card2.innerHTML = `
+                        <div class="portrait-frame">
+                            ${composer2.image ? `<img src="${composer2.image}" alt="${composer2.name}">` : '<div class="placeholder-portrait">🎼</div>'}
+                        </div>
+                        <div class="composer-name">${composer2.name}</div>
+                    `;
+                    playAudio(composer2.audioIntro);
+                }, hasWildcard1 ? 1700 : 1700);
+            } else {
+                setTimeout(() => {
+                    playAudio(composer2.audioIntro);
+                }, 900);
+            }
+            
+            // Calculate when both composers have fully entered
+            const composer1EnterTime = hasWildcard1 ? 1600 : 800;
+            const composer2EnterTime = hasWildcard2 ? 2500 : 1700;
+            const totalEntranceTime = Math.max(composer1EnterTime, composer2EnterTime);
+            
+            // Make cards clickable after entrances complete
+            setTimeout(() => {
+                const card1 = document.getElementById('composer1');
+                const card2 = document.getElementById('composer2');
+                
+                card1.classList.add('selectable');
+                card2.classList.add('selectable');
+                
+                card1.onclick = () => selectWinner(composer1, card1, card2);
+                card2.onclick = () => selectWinner(composer2, card2, card1);
+            }, totalEntranceTime);
+            
+            // Populate bracket with competitor names
+            populateBracketMatchup(composer1, composer2);
+        }
+        
+        // Populate bracket with matchup names
+        function populateBracketMatchup(composer1, composer2) {
+            if (currentDivision === 'finalFour') {
+                // Show all 4 competitors in Final Four
+                if (currentMatchIndex === 0) {
+                    // First semi-final
+                    const c1 = document.getElementById('ff-sf1-c1');
+                    const c2 = document.getElementById('ff-sf1-c2');
+                    if (c1) {
+                        c1.innerHTML = `<span class="seed">${composer1.seed || ''}</span><span class="name">${composer1.name}</span>`;
+                        c1.classList.add('populated');
+                    }
+                    if (c2) {
+                        c2.innerHTML = `<span class="seed">${composer2.seed || ''}</span><span class="name">${composer2.name}</span>`;
+                        c2.classList.add('populated');
+                    }
+                } else if (currentMatchIndex === 1) {
+                    // Second semi-final
+                    const c1 = document.getElementById('ff-sf2-c1');
+                    const c2 = document.getElementById('ff-sf2-c2');
+                    if (c1) {
+                        c1.innerHTML = `<span class="seed">${composer1.seed || ''}</span><span class="name">${composer1.name}</span>`;
+                        c1.classList.add('populated');
+                    }
+                    if (c2) {
+                        c2.innerHTML = `<span class="seed">${composer2.seed || ''}</span><span class="name">${composer2.name}</span>`;
+                        c2.classList.add('populated');
+                    }
+                }
+            } else if (currentDivision === 'championship') {
+                // Show both finalists in Championship
+                const c1 = document.getElementById('championship-c1');
+                const c2 = document.getElementById('championship-c2');
+                if (c1) {
+                    c1.innerHTML = `<span class="seed">${composer1.seed || ''}</span><span class="name">${composer1.name}</span>`;
+                    c1.classList.add('populated');
+                }
+                if (c2) {
+                    c2.innerHTML = `<span class="seed">${composer2.seed || ''}</span><span class="name">${composer2.name}</span>`;
+                    c2.classList.add('populated');
+                }
+            } else {
+                // Regular division matchup
+                const bracketId = getBracketId();
+                if (!bracketId) return;
+                
+                const bracketMatch = document.getElementById(bracketId);
+                if (bracketMatch) {
+                    bracketMatch.innerHTML = `
+                        <span><span class="seed">${composer1.seed}</span><span class="name">${composer1.name}</span></span>
+                        <span style="margin: 0 5px;">vs</span>
+                        <span><span class="seed">${composer2.seed}</span><span class="name">${composer2.name}</span></span>
+                    `;
+                    bracketMatch.classList.add('populated');
+                }
+            }
+        }
+        
+        // Get bracket element ID
+        function getBracketId() {
+            if (currentDivision === 'finalFour') {
+                return currentMatchIndex === 0 ? 'ff-m1' : 'ff-m2';
+            } else if (currentDivision === 'championship') {
+                return 'championship';
+            } else {
+                const matchNum = currentMatchIndex + 1;
+                return `${currentDivision}-r${currentRound}-m${matchNum}`;
+            }
+        }
+        
+        // Select winner with flourish
+        async function selectWinner(winner, winnerCard, loserCard) {
+            // Remove click handlers
+            winnerCard.onclick = null;
+            loserCard.onclick = null;
+            winnerCard.classList.remove('selectable');
+            loserCard.classList.remove('selectable');
+            
+            // Winner flourish animation, loser fades
+            winnerCard.classList.add('winner');
+            loserCard.classList.add('loser');
+            
+            // Play winner's victory audio
+            playAudio(winner.audioWinner);
+            
+            // Create confetti
+            createConfetti(winnerCard);
+            
+            // Animate winner's name into bracket
+            await new Promise(resolve => setTimeout(resolve, 800));
+            updateBracketWithWinner(winner, true);
+            
+            // Mark loser in Final Four/Championship brackets
+            if (currentDivision === 'finalFour') {
+                if (currentMatchIndex === 0) {
+                    const loserEl = document.getElementById(winnerCard.classList.contains('winner') ? 'ff-sf1-c2' : 'ff-sf1-c1');
+                    // Loser stays visible but not highlighted
+                } else if (currentMatchIndex === 1) {
+                    const loserEl = document.getElementById(winnerCard.classList.contains('winner') ? 'ff-sf2-c2' : 'ff-sf2-c1');
+                }
+            } else if (currentDivision === 'championship') {
+                // Loser stays visible in championship bracket
+            }
+            
+            // Remove wildcard status after first win - they've earned their place!
+            const advancingWinner = { ...winner, wildcard: false };
+            
+            // Record result
+            if (currentDivision === 'finalFour') {
+                results.finalFour.push(advancingWinner);
+            } else if (currentDivision === 'championship') {
+                results.champion = advancingWinner;
+            } else {
+                results[currentDivision][`r${currentRound}`].push(advancingWinner);
+            }
+            
+            // Wait to show the result, then advance
+            await new Promise(resolve => setTimeout(resolve, 2500));
+            currentMatchIndex++;
+            startNextMatch();
+        }
+        
+        // Update bracket with winner
+        function updateBracketWithWinner(winner, animate = false) {
+            const bracketId = getBracketId();
+            if (!bracketId) return;
+            
+            const bracketMatch = document.getElementById(bracketId);
+            if (bracketMatch) {
+                const nameHTML = `<span class="seed">${winner.seed || ''}</span><span class="name">${winner.name}</span>`;
+                bracketMatch.innerHTML = nameHTML;
+                bracketMatch.classList.add('winner');
+                
+                if (animate) {
+                    bracketMatch.style.animation = 'bracketNameSlide 0.6s ease';
+                }
+            }
+        }
+        
+        // Create confetti effect
+        function createConfetti(element) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = centerX + 'px';
+                confetti.style.top = centerY + 'px';
+                confetti.style.background = ['#D4AF37', '#FFD700', '#FF6B6B'][Math.floor(Math.random() * 3)];
+                confetti.style.animationDelay = Math.random() * 0.3 + 's';
+                confetti.style.transform = `translateX(${(Math.random() - 0.5) * 200}px)`;
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+        
+        // Advance to next phase
+        async function advancePhase() {
+            if (currentDivision === 'championship') {
+                showChampion();
+                return;
+            }
+            
+            if (currentDivision === 'finalFour') {
+                document.getElementById('gameArea').innerHTML = '';
+                await showOverlay('Championship Round', 'The Final Battle');
+                currentDivision = 'championship';
+                currentRound = 1;
+                currentMatchIndex = 0;
+                
+                const finalists = results.finalFour;
+                displayMatchup(finalists[0], finalists[1]);
+                return;
+            }
+            
+            const divisions = ['baroque', 'classical', 'romantic', 'modernists'];
+            const currentDivIndex = divisions.indexOf(currentDivision);
+            
+            if (currentRound < 3) {
+                // Next round in same division
+                currentRound++;
+                currentMatchIndex = 0;
+                startNextMatch();
+            } else {
+                // Next division
+                if (currentDivIndex < 3) {
+                    currentDivision = divisions[currentDivIndex + 1];
+                    currentRound = 1;
+                    currentMatchIndex = 0;
+                    
+                    const divisionNames = {
+                        classical: 'The Classical Era',
+                        romantic: 'The Romantic Era',
+                        modernists: 'The Modernist Era'
+                    };
+                    
+                    document.getElementById('gameArea').innerHTML = '';
+                    await showOverlay(divisionNames[currentDivision], '');
+                    startNextMatch();
+                } else {
+                    // Start Final Four
+                    document.getElementById('gameArea').innerHTML = '';
+                    await showOverlay('Final Four', 'The Best of Each Era');
+                    currentDivision = 'finalFour';
+                    currentRound = 1;
+                    currentMatchIndex = 0;
+                    
+                    const baroque = results.baroque.r3[0];
+                    const classical = results.classical.r3[0];
+                    const romantic = results.romantic.r3[0];
+                    const modernists = results.modernists.r3[0];
+                    
+                    // Set up Final Four matches
+                    displayMatchup(baroque, classical);
+                }
+            }
+        }
+        
+        // Show final champion
+        function showChampion() {
+            const champion = results.champion;
+            const gameArea = document.getElementById('gameArea');
+            
+            playAudio(champion.audioWinner);
+            
+            gameArea.innerHTML = `
+                <div class="champion-container">
+                    <h2 style="font-size: 3em; color: #FFD700; margin-bottom: 30px;">🎉 Your Champion! 🎉</h2>
+                    <div class="champion-portrait">
+                        ${champion.image ? `<img src="${champion.image}" alt="${champion.name}">` : '<div class="placeholder-portrait" style="font-size: 6em;">🎼</div>'}
+                    </div>
+                    <h3 style="font-size: 2.5em; color: #FFD700; margin-top: 30px;">${champion.name}</h3>
+                    
+                    <div class="share-buttons">
+                        <button class="share-btn" onclick="shareToTwitter()">Share on Twitter</button>
+                        <button class="share-btn" onclick="shareToFacebook()">Share on Facebook</button>
+                        <button class="share-btn" onclick="copyResults()">Copy Results</button>
+                    </div>
+                    
+                    <div style="margin-top: 40px;">
+                        <button class="btn" onclick="location.reload()">Play Again</button>
+                    </div>
+                </div>
+            `;
+            
+            createConfetti(document.querySelector('.champion-portrait'));
+        }
+        
+        // Social sharing functions
+        function shareToTwitter() {
+            const champion = results.champion;
+            const text = `I just crowned ${champion.name} as my favorite composer in the @ChicagoSymphony Composer Tournament! 🎵 Who's your champion?`;
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+        
+        function shareToFacebook() {
+            const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+            window.open(url, '_blank');
+        }
+        
+        function copyResults() {
+            const champion = results.champion;
+            const text = `My CSO Composer Tournament Champion: ${champion.name} (${champion.years})`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Results copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
